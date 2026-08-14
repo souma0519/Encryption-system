@@ -14,11 +14,15 @@ RULE_STEP1 = {
 }
 
 SIGNAL_TO_NUM = {
-    ".": "49", "#": "52", ",": "47", "_": "43", "\\": "40", "¥": "5", "-": "6",
-    "!": "48", "@": "8", "$": "50", "&": "51", "*": "36", "(": "12",
-    ")": "13", "+": "37", "~": "44", '"': "16", "?": "35", "/": "38",
-    ":": "33", "[": "27", ";": "31", "]": "28", "<": "32", "{": "29",
-    ">": "34", "}": "30", "=": "39", "^": "41", "|": "42", "%": "46",
+    ".": "1", "#": "2", ",": "3", "_": "4", "\\": "5", "¥": "5", "-": "6",
+    "!": "7", "@": "8", "$": "9", "&": "10", "*": "11", "(": "12",
+    ")": "13", "+": "14", "~": "15", '"': "16", "?": "17", "/": "18",
+    ":": "19", "[": "20", ";": "21", "]": "22", "<": "23", "{": "24",
+    ">": "25", "}": "26", "[": "27", "]": "28", "{": "29", "}": "30",
+    ";": "31", "<": "32", ":": "33", ">": "34", "?": "35", "*": "36",
+    "+": "37", "/": "38", "=": "39", "\\": "40", "^": "41", "|": "42",
+    "_": "43", "~": "44", ".": "45", "%": "46", ",": "47", "!": "48",
+    ".": "49", "$": "50", "&": "51", "#": "52",
 }
 NUM_TO_SIGNAL = {value: key for key, value in SIGNAL_TO_NUM.items()}
 NUM_TO_SIGNAL["5"] = "\\"
@@ -43,7 +47,10 @@ def encrypt_process(text):
                 number = SIGNAL_TO_NUM[signal]
                 if signal not in seen_signals:
                     seen_signals.append(signal)
-                kind_list.append((make_random_alphas() if int(number) >= 10 else "_") + number)
+                if int(number) >= 10:
+                    kind_list.append(make_random_alphas() + number)
+                else:
+                    kind_list.append("_" + number)
     combined_signals = "".join(signal_list)
     ones_number = int("1" * len(seen_signals)) if seen_signals else 1
     hidden_counts = ones_number * random.randint(100, 999)
@@ -55,8 +62,20 @@ def decrypt_process(code):
         parts = str(code).strip().replace("¥", "\\").split(".")
         if len(parts) != 3:
             return "コードの形式が違います"
-        matches = re.findall(r"_[0-9]|[0-9]{2}", parts[2])
-        restored_signals = "".join(NUM_TO_SIGNAL.get(match[1:] if match.startswith("_") else match, "") for match in matches)
+        total_count = int(parts[0])
+        hidden_counts = parts[1]
+        kind_rule = parts[2]
+        matches = re.findall(r"_[0-9]|[0-9]{2}", kind_rule)
+        num_list = []
+        for match in matches:
+            if match.startswith("_"):
+                num_list.append(match[1:])
+            else:
+                num_list.append(match)
+        restored_signals = ""
+        for num in num_list:
+            if num in NUM_TO_SIGNAL:
+                restored_signals += NUM_TO_SIGNAL[num]
         original_text = ""
         temporary = restored_signals
         while temporary:
@@ -69,7 +88,7 @@ def decrypt_process(code):
             else:
                 temporary = temporary[1:]
         return original_text
-    except (TypeError, ValueError):
+    except Exception:
         return "解読できませんでした"
 
 
