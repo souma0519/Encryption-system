@@ -103,7 +103,28 @@ PAGE = """<!doctype html>
 <section id="decrypt"><label for="dec">暗号コード</label><input id="dec" placeholder="暗号コードをペーストしてください..." autocomplete="off"><button class="action" onclick="run('decrypt')">パズルを解読する</button><div id="dec-result"></div></section>
 </main><script>
 document.querySelectorAll('.tab').forEach(tab=>tab.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('section').forEach(x=>x.classList.remove('active-panel'));tab.classList.add('active');document.getElementById(tab.dataset.target).classList.add('active-panel')});
-async function run(mode){const value=document.getElementById(mode==='encrypt'?'enc':'dec').value;const box=document.getElementById(mode+'-result');box.textContent='処理中…';const response=await fetch('/api/index.py',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode,value})});const data=await response.json();const shown=JSON.stringify(data.result||'');box.innerHTML=data.result?'<div class="result">'+(mode==='encrypt'?'<strong>完成した暗号コード:</strong><br><code>':'<strong>解読された元の文字:</strong> ')+shown+(mode==='encrypt'?'</code>':'')+'</div>':'<div class="result error">'+data.error+'</div>'}
+async function run(mode){
+  const value=document.getElementById(mode==='encrypt'?'enc':'dec').value;
+  const box=document.getElementById(mode+'-result');
+  box.textContent='処理中…';
+  try {
+    const response=await fetch('/api/index.py',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:mode,value:value})});
+    const data=await response.json();
+    box.textContent='';
+    const result=document.createElement('div');
+    result.className='result';
+    if(data.result){
+      result.textContent=(mode==='encrypt'?'完成した暗号コード: ':'解読された元の文字: ')+data.result;
+    }else{
+      result.className='result error';
+      result.textContent=data.error||'処理に失敗しました。';
+    }
+    box.appendChild(result);
+  } catch(error) {
+    box.className='result error';
+    box.textContent='通信エラーが発生しました。ページを再読み込みしてください。';
+  }
+}
 </script></body></html>"""
 
 
